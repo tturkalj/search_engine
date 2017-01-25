@@ -1,2 +1,2 @@
 # search_engine
-Search enging app in Flask
+Search engine app in Flask

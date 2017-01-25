@@ -11,7 +11,7 @@ def create_app(config=None):
 if __name__ == '__main__':
     app = create_app()
     app.register_blueprint(simple_page)
-    app.run()
+    app.run(host='0.0.0.0')
 
 
 
