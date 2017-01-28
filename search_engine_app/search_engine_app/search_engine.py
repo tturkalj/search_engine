@@ -5,84 +5,74 @@ import os
 import math
 import resource
 import re
-from textblob import TextBlob
+import sys
 from timeit import default_timer
 from shutil import copyfile
+from array import array
+
+start_time = default_timer()
+
+
+def get_elapsed_time():
+    return default_timer() - start_time
 
 
 def main(argv):
-    # search_term = argv[1]
-    # print 'searching for word {0}'.format(search_term)
-    start_time = default_timer()
+    search_term = argv[1]
+    print u'searching for word {0}'.format(search_term)
+
     print u'start time {0}'.format(start_time)
 
     print u'start memory {0}'.format(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 
-    data_dir = '../../data/20news-bydate-train'
+    data_dir = '../../data/20news-bydate-test'
     # data_dir = 'data/small_train'
 
-    document_number = 0
-    term_in_doc_number = 0
-    document_tf_dict = {}
     regex_pattern = re.compile(r"\b[a-z]+\b", re.IGNORECASE)
 
-    document_words = {}
+    document_words = []
 
     print u'extracting words from documents...'
     for dir_path, dir_names, file_names in os.walk(data_dir):
         for file_name in file_names:
             file_path = os.path.join(dir_path, file_name)
-            f = open(file_path, 'r')
-            text = unicode(f.read(), 'ISO-8859-14')
-            f.close()
+            with open(file_path, 'r') as f:
+                text = unicode(f.read(), 'ISO-8859-14')
+            
             words = []
             reg = re.findall(regex_pattern, text)
             if reg:
                 for x in reg:
                     words.append(x)
-            document_words[file_name] = words
+            document_words.append((file_name, words))
+        print u'folder {0} finished'.format(dir_path)
 
-
-            # word_count = len(words)
-            # search_term_count = words.count(search_term)
-            # if search_term_count:
-            #     document_tf = search_term_count / word_count
-            #     document_words_data.append((file_path, words, document_tf))
-            #     term_in_doc_number += 1
-    extracting_words_timer = default_timer()
-
-    print u'finished in {0} sec'.format(extracting_words_timer - start_time)
-
-    print u'start indexing words...'
+    print u'finished in {0} sec'.format(get_elapsed_time())
+    
+    print u'start indexing words in {0} document'.format(len(document_words))
     document_word_tf_idf = {}
-    for document in document_words:
+    for document, words in document_words:
         document_word_tf_idf[document] = {}
-        words_list = document_words[document]
-        for word in words_list:
+        for word in words:
             if word not in document_word_tf_idf[document]:
-                word_in_doc_count = 0
-                for temp in document_words:
-                    if word in document_words[temp]:
+                word_in_doc_count = 1
+                for temp_doc, temp_words in document_words:
+                    if temp_doc != document and word in temp_words:
                         word_in_doc_count += 1
-                tf = words_list.count(word) / len(words_list)
+                tf = words.count(word) / len(words)
                 idf = math.log(len(document_words) / word_in_doc_count)
-                document_word_tf_idf[document] = {word: tf * idf}
+                document_word_tf_idf[document].update({word: tf * idf})
 
-    indexing_words_timer = default_timer()
-    print u'finished in {0} sec'.format(indexing_words_timer - start_time)
+    print u'finished in {0} sec'.format(get_elapsed_time())
 
-    # idf = math.log(document_number / (1 + term_in_doc_number))
-    # tf_idf_doc_dict = {}
-    # if document_tf_dict:
-    #     for doc in document_tf_dict:
-    #         tf_idf_doc_dict[doc] = document_tf_dict[doc] * idf
-    #     sorted_doc_tf_idf = sorted(tf_idf_doc_dict.items(), key=lambda x: x[1])
-    #     # for item in sorted_doc_tf_idf:
-    #     #     print item
+    print u'Document order for word {0}:'.format(search_term)
+    results = document_word_tf_idf.get(search_term, None)
+    if results:
+        print sorted(results.items(), key=lambda x: x[1])
+    else:
+        print u'Term no found'
 
-    print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    end_time = default_timer()
-    print u'time elapsed: {0}'.format(end_time - start_time)
+    print u'time elapsed: {0}'.format(get_elapsed_time())
 
 if __name__ == '__main__':
     main(sys.argv)
