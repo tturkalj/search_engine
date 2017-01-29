@@ -60,13 +60,14 @@ def main(argv):
 
     result_dict = {}
     for word in search_term:
-        results = document_word_tf_idf[word].get(search_term, None)
-        if results:
-            for doc, tfidf in results:
-                if doc in result_dict:
-                    result_dict[doc] = result_dict[doc] + tfidf
-                else:
-                    result_dict[doc] = tfidf
+        if word in document_word_tf_idf:
+            results = document_word_tf_idf[word].get(search_term, None)
+            if results:
+                for doc, tfidf in results:
+                    if doc in result_dict:
+                        result_dict[doc] = result_dict[doc] + tfidf
+                    else:
+                        result_dict[doc] = tfidf
 
     if result_dict:
         sorted_results = sorted(result_dict[1].items(), key=lambda x: x[1])
@@ -74,7 +75,6 @@ def main(argv):
     else:
         print u'Search term not found'
 
-    print u'Time elapsed: {0}'.format(get_elapsed_time())
 
 if __name__ == '__main__':
     main(sys.argv)
